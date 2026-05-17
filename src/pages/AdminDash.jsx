@@ -21,9 +21,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import ChangeCredentials from "../components/ChangeCredentials";
-
-const API_BASE =
-  "http://localhost/IAS/secure-access-frontend/backend/index.php";
+import API_BASE from "../config.js";
 
 /** Rows per page — must match or be ≤ backend's max allowed limit. */
 const PAGE_LIMIT = 10;
@@ -166,7 +164,7 @@ function AdminDash() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10">
+    <div className="min-h-screen px-4 py-10">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

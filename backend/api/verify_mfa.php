@@ -115,7 +115,9 @@ if (!$answerValid) {
 // 6. MFA PASSED — Upgrade session to fully authenticated
 // Regenerate session ID again to prevent fixation after full auth.
 // =============================================================
-session_regenerate_id(true);
+// session_regenerate_id disabled on shared hosting — cookie does not
+// survive the ID change between login and MFA on this environment.
+// Re-enable if migrating to a VPS with sticky sessions or Redis.
 
 // Promote pending MFA data to authenticated session keys
 $_SESSION['authenticated'] = true;

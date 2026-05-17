@@ -69,7 +69,7 @@ function Login() {
   const showMfa = !showLockout && !!mfaState;
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md space-y-8">
         {/* Brand header — sits above the card */}
         <div className="text-center">

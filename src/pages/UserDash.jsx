@@ -20,8 +20,7 @@ import { useAuth } from "../context/AuthContext";
 import ChangeCredentials from "../components/ChangeCredentials";
 
 // Backend base URL — keep in sync with vite.config.js proxy or .env
-const API_BASE =
-  "http://localhost/IAS/secure-access-frontend/backend/index.php";
+import API_BASE from "../config.js";
 
 // ---------------------------------------------------------------------------
 // Component
@@ -79,7 +78,7 @@ function UserDash() {
   }, []); // Empty dep array — fetch once on mount
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10">
+    <div className="min-h-screen px-4 py-10">
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

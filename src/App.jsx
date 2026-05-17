@@ -34,6 +34,8 @@ import UserDash from "./pages/UserDash";
 import AdminDash from "./pages/AdminDash";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Signup from "./pages/Signup";
+import FloatingNav from "./components/FloatingNav";
+import AnimatedBackground from "./components/AnimatedBackground";
 
 /**
  * App
@@ -49,28 +51,35 @@ import Signup from "./pages/Signup";
  */
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} /> {/* ← new */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <UserDash />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <AdminDash />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      {/* Fixed behind everything — pages sit on top of it */}
+      <div className="fixed inset-0 bg-slate-950 -z-10 overflow-hidden">
+        <AnimatedBackground />
+      </div>
+      <FloatingNav />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} /> {/* ← new */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <UserDash />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDash />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }
 

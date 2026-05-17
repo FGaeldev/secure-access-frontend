@@ -14,9 +14,7 @@
 
 import React, { useState } from "react";
 import axios from "axios";
-
-const API_BASE =
-  "http://localhost/IAS/secure-access-frontend/backend/index.php";
+import API_BASE from "../config.js";
 
 // ---------------------------------------------------------------------------
 // Main Component

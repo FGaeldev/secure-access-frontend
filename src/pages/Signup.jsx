@@ -23,9 +23,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { validateUsername, validatePassword } from "../utils/validators";
-
-const API_BASE =
-  "http://localhost/IAS/secure-access-frontend/backend/index.php";
+import API_BASE from "../config.js";
 
 // ---------------------------------------------------------------------------
 // Security questions — must stay in sync with login.php and register.php
@@ -187,7 +185,7 @@ function Signup() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md space-y-6">
         {/* ── Heading ── */}
         <div className="text-center">

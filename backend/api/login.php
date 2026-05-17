@@ -189,7 +189,9 @@ if (!$credentialsValid) {
 // 7. CREDENTIALS VALID — Store pending MFA state in session
 // Do NOT set full auth session yet; MFA must pass first.
 // =============================================================
-session_regenerate_id(true); // Prevent session fixation
+// session_regenerate_id disabled on shared hosting — cookie does not
+// survive the ID change between login and MFA on this environment.
+// Re-enable if migrating to a VPS with sticky sessions or Redis.
 
 $_SESSION['mfa_pending']      = true;
 $_SESSION['mfa_user_id']      = (int) $user['id'];

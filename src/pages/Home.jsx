@@ -40,7 +40,7 @@ function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-6 text-center">
+    <main className=" min-h-screen flex flex-col items-center justify-center px-6 text-center">
       {/* Brand tag */}
       <span className="mb-6 inline-block bg-indigo-900/40 border border-indigo-700 text-indigo-300 text-xs px-4 py-1.5 rounded-full uppercase tracking-widest">
         Schaden's Cosplays — Member Portal
