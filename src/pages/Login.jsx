@@ -40,10 +40,19 @@ import { validateLoginForm, validateMfaForm } from "../utils/validators";
  * @returns {React.ReactElement}
  */
 function Login() {
-  const { user, mfaState, lockout, attemptsLeft, login, verifyMfa, loading, error } =
-  useAuth();
+  const {
+    user,
+    mfaState,
+    lockout,
+    attemptsLeft,
+    login,
+    verifyMfa,
+    loading,
+    error,
+  } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const flashMessage = location.state?.flash ?? null;
 
   // Redirect authenticated users away from the login page immediately.
   // "from" is set by ProtectedRoute when it bounces an unauthenticated user.
@@ -73,13 +82,32 @@ function Login() {
           </p>
         </div>
 
+        {flashMessage && (
+          <div
+            role="status"
+            className="bg-emerald-900/30 border border-emerald-700 text-emerald-300 text-sm px-4 py-3 rounded-lg"
+          >
+            {flashMessage}
+          </div>
+        )}
+
         {/* Conditional panel */}
         {showLockout ? (
           <LockoutBanner lockout={lockout} />
         ) : showMfa ? (
-          <MfaForm mfaState={mfaState} verifyMfa={verifyMfa} loading={loading} error={error} />
+          <MfaForm
+            mfaState={mfaState}
+            verifyMfa={verifyMfa}
+            loading={loading}
+            error={error}
+          />
         ) : (
-          <CredentialForm login={login} attemptsLeft={attemptsLeft} loading={loading} error={error} />
+          <CredentialForm
+            login={login}
+            attemptsLeft={attemptsLeft}
+            loading={loading}
+            error={error}
+          />
         )}
       </div>
     </div>
@@ -130,13 +158,27 @@ function CredentialForm({ login, attemptsLeft, loading, error }) {
 
       {error && <ErrorAlert message={error} />}
 
-      <FormField id="username" label="Username" type="text"
-        value={username} onChange={(e) => setUsername(e.target.value)}
-        error={errors.username} autoComplete="username" disabled={loading} />
+      <FormField
+        id="username"
+        label="Username"
+        type="text"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        error={errors.username}
+        autoComplete="username"
+        disabled={loading}
+      />
 
-      <FormField id="password" label="Password" type="password"
-        value={password} onChange={(e) => setPassword(e.target.value)}
-        error={errors.password} autoComplete="current-password" disabled={loading} />
+      <FormField
+        id="password"
+        label="Password"
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        error={errors.password}
+        autoComplete="current-password"
+        disabled={loading}
+      />
 
       <SubmitButton loading={loading} label="Sign In" />
     </form>

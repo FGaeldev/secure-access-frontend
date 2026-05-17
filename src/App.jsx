@@ -28,11 +28,12 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-import Home       from "./pages/Home";
-import Login      from "./pages/Login";
-import UserDash   from "./pages/UserDash";
-import AdminDash  from "./pages/AdminDash";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import UserDash from "./pages/UserDash";
+import AdminDash from "./pages/AdminDash";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Signup from "./pages/Signup";
 
 /**
  * App
@@ -49,11 +50,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 function App() {
   return (
     <Routes>
-      {/* ── Public ─────────────────────────────────────────────────────── */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
-
-      {/* ── Authenticated: any role ─────────────────────────────────────── */}
+      <Route path="/signup" element={<Signup />} /> {/* ← new */}
       <Route
         path="/dashboard"
         element={
@@ -62,8 +61,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
-      {/* ── Authenticated: admin only ───────────────────────────────────── */}
       <Route
         path="/admin"
         element={
@@ -72,8 +69,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
-      {/* ── Catch-all: redirect unknown paths to home ───────────────────── */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

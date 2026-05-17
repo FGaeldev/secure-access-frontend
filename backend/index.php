@@ -67,6 +67,7 @@ $routes = [
     'get_users'   => __DIR__ . '/api/get_users.php',
     'update_role' => __DIR__ . '/api/update_role.php',
     'update_credentials' => __DIR__ . '/api/update_credentials.php',
+    'register'    => __DIR__ . '/api/register.php',
 ];
 
 // =============================================================

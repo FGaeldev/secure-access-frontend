@@ -48,8 +48,8 @@ function Home() {
 
       {/* Headline */}
       <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight max-w-xl">
-        Secure Access,{" "}
-        <span className="text-indigo-400">Role-Aware</span> Control
+        Secure Access, <span className="text-indigo-400">Role-Aware</span>{" "}
+        Control
       </h1>
 
       {/* Subheading */}
@@ -59,12 +59,24 @@ function Home() {
       </p>
 
       {/* CTA */}
-      <Link
-        to={ctaHref}
-        className="mt-10 inline-block bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm px-7 py-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-950"
-      >
-        {ctaLabel}
-      </Link>
+      <div className="mt-10 flex items-center gap-3">
+        <Link
+          to={ctaHref}
+          className="inline-block bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm px-7 py-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-950"
+        >
+          {ctaLabel}
+        </Link>
+
+        {/* Only shown to unauthenticated visitors — no signup needed once logged in */}
+        {!user && (
+          <Link
+            to="/signup"
+            className="inline-block bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 font-semibold text-sm px-7 py-3 rounded-lg border border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-950"
+          >
+            Sign Up
+          </Link>
+        )}
+      </div>
 
       {/* Feature pills */}
       <div className="mt-12 flex flex-wrap justify-center gap-3">
