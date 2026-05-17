@@ -20,6 +20,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import ChangeCredentials from '../components/ChangeCredentials';
 
 const API_BASE =
   "http://localhost/IAS/secure-access-frontend/backend/index.php";
@@ -186,6 +187,8 @@ function AdminDash() {
           <ProfileChip label="Role" value={user?.role} highlight />
           <ProfileChip label="Status" value="Active" />
         </div>
+        
+        <ChangeCredentials />
 
         {/* ── User Management Table ── */}
         <section className="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden">

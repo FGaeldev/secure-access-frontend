@@ -17,6 +17,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import ChangeCredentials from '../components/ChangeCredentials';
 
 // Backend base URL — keep in sync with vite.config.js proxy or .env
 const API_BASE = "http://localhost/IAS/secure-access-frontend/backend/index.php";
@@ -131,6 +132,8 @@ function UserDash() {
             </dl>
           )}
         </section>
+
+        <ChangeCredentials />
 
         {/* Info card — placeholder for future user actions */}
         <section className="bg-slate-900 border border-slate-700 rounded-2xl p-6">
