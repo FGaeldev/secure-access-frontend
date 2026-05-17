@@ -64,6 +64,8 @@ $routes = [
     'logout'      => __DIR__ . '/api/logout.php',
     'get_profile' => __DIR__ . '/api/get_profile.php',
     'get_logs'    => __DIR__ . '/api/get_logs.php',
+    'get_users'   => __DIR__ . '/api/get_users.php',
+    'update_role' => __DIR__ . '/api/update_role.php',
 ];
 
 // =============================================================

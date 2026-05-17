@@ -29,13 +29,13 @@ const PAGE_LIMIT = 10;
 
 /** Action filter options — must match values stored in activity_logs.action. */
 const ACTION_OPTIONS = [
-  { value: "",                    label: "All Actions" },
-  { value: "LOGIN_SUCCESS",       label: "Login Success" },
-  { value: "LOGIN_FAILED",        label: "Login Failed" },
+  { value: "", label: "All Actions" },
+  { value: "LOGIN_SUCCESS", label: "Login Success" },
+  { value: "LOGIN_FAILED", label: "Login Failed" },
   { value: "LOGIN_CREDENTIAL_OK", label: "Credential OK" },
-  { value: "MFA_FAILED",          label: "MFA Failed" },
-  { value: "LOGOUT",              label: "Logout" },
-  { value: "ACCOUNT_LOCKED",      label: "Account Locked" },
+  { value: "MFA_FAILED", label: "MFA Failed" },
+  { value: "LOGOUT", label: "Logout" },
+  { value: "ACCOUNT_LOCKED", label: "Account Locked" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -63,6 +63,11 @@ function AdminDash() {
   const [actionFilter, setActionFilter] = useState("");
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsError, setLogsError] = useState(null);
+  // ── User table state ──────────────────────────────────────────────────────
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState(null);
+  const [roleChanging, setRoleChanging] = useState(null);
 
   /**
    * Fetches one page of activity logs from the backend.
@@ -89,7 +94,9 @@ function AdminDash() {
       setLogs(data.logs ?? []);
       setTotalLogs(data.pagination?.total_rows ?? 0);
     } catch (err) {
-      setLogsError(err.response?.data?.error ?? "Failed to load activity logs.");
+      setLogsError(
+        err.response?.data?.error ?? "Failed to load activity logs.",
+      );
     } finally {
       setLogsLoading(false);
     }
@@ -107,6 +114,55 @@ function AdminDash() {
   }
 
   const totalPages = Math.ceil(totalLogs / PAGE_LIMIT);
+
+  /**
+   * Fetches all users for the admin user table.
+   * Called on mount and after a successful role change.
+   */
+  const fetchUsers = useCallback(async () => {
+    setUsersLoading(true);
+    setUsersError(null);
+
+    try {
+      const response = await axios.get(API_BASE, {
+        params: { route: "get_users" },
+        withCredentials: true,
+      });
+      setUsers(response.data?.users ?? []);
+    } catch (err) {
+      setUsersError(err.response?.data?.message ?? "Failed to load users.");
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  /**
+   * Sends a role update request for the given user.
+   * Re-fetches the user list on success to reflect the change immediately.
+   *
+   * @param {number} userId   - ID of the user to update.
+   * @param {string} newRole  - Target role: "admin" or "user".
+   */
+  async function handleRoleChange(userId, newRole) {
+    setRoleChanging(userId); // Disable that row's dropdown during request
+
+    try {
+      await axios.post(
+        `${API_BASE}?route=update_role`,
+        { user_id: userId, new_role: newRole },
+        { withCredentials: true },
+      );
+      await fetchUsers(); // Refresh table to show updated role
+    } catch (err) {
+      setUsersError(err.response?.data?.message ?? "Role update failed.");
+    } finally {
+      setRoleChanging(null);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-10">
@@ -130,6 +186,100 @@ function AdminDash() {
           <ProfileChip label="Role" value={user?.role} highlight />
           <ProfileChip label="Status" value="Active" />
         </div>
+
+        {/* ── User Management Table ── */}
+        <section className="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-700">
+            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+              User Management
+              {users.length > 0 && (
+                <span className="ml-2 text-slate-500 font-normal normal-case">
+                  ({users.length} users)
+                </span>
+              )}
+            </h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            {usersLoading && (
+              <p className="text-slate-500 text-sm text-center py-8">
+                Loading users…
+              </p>
+            )}
+
+            {usersError && !usersLoading && (
+              <div
+                role="alert"
+                className="mx-6 my-4 bg-red-900/30 border border-red-700 text-red-300 text-sm px-4 py-3 rounded-lg"
+              >
+                {usersError}
+              </div>
+            )}
+
+            {!usersLoading && users.length > 0 && (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-slate-500 uppercase tracking-wider border-b border-slate-700">
+                    <th className="px-6 py-3 font-medium">ID</th>
+                    <th className="px-6 py-3 font-medium">Username</th>
+                    <th className="px-6 py-3 font-medium">Email</th>
+                    <th className="px-6 py-3 font-medium">Status</th>
+                    <th className="px-6 py-3 font-medium">Role</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {users.map((u) => (
+                    <tr
+                      key={u.id}
+                      className="hover:bg-slate-800/50 transition-colors"
+                    >
+                      <td className="px-6 py-3 text-slate-500 font-mono text-xs">
+                        {u.id}
+                      </td>
+                      <td className="px-6 py-3 text-slate-300 font-medium">
+                        {u.username}
+                        {/* Mark the currently logged-in admin */}
+                        {u.username === user?.username && (
+                          <span className="ml-2 text-xs text-violet-400">
+                            (you)
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-3 text-slate-400">
+                        {u.email ?? "—"}
+                      </td>
+                      <td className="px-6 py-3">
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full border ${
+                            u.is_locked
+                              ? "bg-red-900/30 text-red-400 border-red-700"
+                              : "bg-emerald-900/30 text-emerald-400 border-emerald-700"
+                          }`}
+                        >
+                          {u.is_locked ? "Locked" : "Active"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3">
+                        <select
+                          value={u.role}
+                          disabled={roleChanging === u.id}
+                          onChange={(e) =>
+                            handleRoleChange(u.id, e.target.value)
+                          }
+                          className="bg-slate-800 border border-slate-600 text-slate-300 text-xs rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-50"
+                          aria-label={`Change role for ${u.username}`}
+                        >
+                          <option value="user">user</option>
+                          <option value="admin">admin</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
 
         {/* ── Activity Logs ── */}
         <section className="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden">
