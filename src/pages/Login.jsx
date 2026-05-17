@@ -21,7 +21,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { validateLoginForm, validateMfaForm } from "../utils/validators";
 
@@ -70,44 +70,74 @@ function Login() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
-      {/* Card container */}
-      <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-8 space-y-6">
-        {/* Logo / title */}
-        <div className="text-center space-y-1">
+      <div className="w-full max-w-md space-y-8">
+        {/* Brand header — sits above the card */}
+        <div className="text-center">
+          <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">
+            Schaden's Cosplays
+          </p>
           <h1 className="text-2xl font-bold text-white tracking-tight">
-            Secure Access
+            Member Portal
           </h1>
-          <p className="text-xs text-slate-400 uppercase tracking-widest">
-            Integrated Access System
+          <p className="text-slate-500 text-sm mt-1">
+            {showMfa
+              ? "Verify your identity to continue"
+              : "Sign in to your account"}
           </p>
         </div>
 
-        {flashMessage && (
-          <div
-            role="status"
-            className="bg-emerald-900/30 border border-emerald-700 text-emerald-300 text-sm px-4 py-3 rounded-lg"
-          >
-            {flashMessage}
-          </div>
-        )}
+        {/* Card */}
+        <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-8 space-y-6">
+          {/* Flash message from signup redirect */}
+          {flashMessage && (
+            <div
+              role="status"
+              className="bg-emerald-900/30 border border-emerald-700 text-emerald-300 text-sm px-4 py-3 rounded-lg"
+            >
+              {flashMessage}
+            </div>
+          )}
 
-        {/* Conditional panel */}
-        {showLockout ? (
-          <LockoutBanner lockout={lockout} />
-        ) : showMfa ? (
-          <MfaForm
-            mfaState={mfaState}
-            verifyMfa={verifyMfa}
-            loading={loading}
-            error={error}
-          />
-        ) : (
-          <CredentialForm
-            login={login}
-            attemptsLeft={attemptsLeft}
-            loading={loading}
-            error={error}
-          />
+          {/* Step indicator — only during MFA */}
+          {showMfa && (
+            <div className="text-center">
+              <span className="inline-block bg-indigo-900/40 border border-indigo-700 text-indigo-300 text-xs px-3 py-1 rounded-full uppercase tracking-widest">
+                Step 2 of 2 — Security Verification
+              </span>
+            </div>
+          )}
+
+          {/* Conditional panel */}
+          {showLockout ? (
+            <LockoutBanner lockout={lockout} />
+          ) : showMfa ? (
+            <MfaForm
+              mfaState={mfaState}
+              verifyMfa={verifyMfa}
+              loading={loading}
+              error={error}
+            />
+          ) : (
+            <CredentialForm
+              login={login}
+              attemptsLeft={attemptsLeft}
+              loading={loading}
+              error={error}
+            />
+          )}
+        </div>
+
+        {/* Signup link — only on credential step */}
+        {!showMfa && !showLockout && (
+          <p className="text-center text-sm text-slate-500">
+            New to Schaden's Cosplays?{" "}
+            <Link
+              to="/signup"
+              className="text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              Create an account
+            </Link>
+          </p>
         )}
       </div>
     </div>
@@ -220,22 +250,15 @@ function MfaForm({ mfaState, verifyMfa, loading, error }) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
-      <div className="text-center">
-        <span className="inline-block bg-slate-800 text-slate-300 text-xs px-3 py-1 rounded-full">
-          Step 2 of 2 — Security Verification
-        </span>
-      </div>
-
       <div className="bg-slate-800 border border-slate-600 rounded-lg p-4">
         <p className="text-xs text-slate-400 mb-1 uppercase tracking-wide">
           Security Question
         </p>
         <p className="text-white text-sm font-medium">
-          {mfaState?.question ?? "Loading question…"}
+          {mfaState?.question ?? "Loading question..."}
         </p>
       </div>
 
-      {/* Use context error, not local serverError */}
       {error && <ErrorAlert message={error} />}
 
       <FormField

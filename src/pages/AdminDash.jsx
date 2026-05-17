@@ -20,7 +20,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import ChangeCredentials from '../components/ChangeCredentials';
+import ChangeCredentials from "../components/ChangeCredentials";
 
 const API_BASE =
   "http://localhost/IAS/secure-access-frontend/backend/index.php";
@@ -168,36 +168,40 @@ function AdminDash() {
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-10">
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
+            <p className="text-xs text-slate-500 uppercase tracking-widest mb-0.5">
+              Schaden's Cosplays
+            </p>
+            <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
             <p className="text-slate-400 text-sm mt-0.5">
-              Logged in as{" "}
+              Signed in as{" "}
               <span className="text-violet-400 font-medium">
-                {user?.username ?? "…"}
+                {user?.username ?? "..."}
               </span>
             </p>
           </div>
           <LogoutButton onLogout={logout} />
         </div>
 
-        {/* ── Admin profile strip ── */}
+        {/* Admin identity strip */}
         <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 flex flex-wrap gap-6">
           <ProfileChip label="Role" value={user?.role} highlight />
           <ProfileChip label="Status" value="Active" />
         </div>
-        
+
+        {/* Security settings */}
         <ChangeCredentials />
 
-        {/* ── User Management Table ── */}
+        {/* User management */}
         <section className="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-700">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               User Management
               {users.length > 0 && (
-                <span className="ml-2 text-slate-500 font-normal normal-case">
-                  ({users.length} users)
+                <span className="ml-2 text-slate-600 font-normal normal-case">
+                  ({users.length} members)
                 </span>
               )}
             </h2>
@@ -206,7 +210,7 @@ function AdminDash() {
           <div className="overflow-x-auto">
             {usersLoading && (
               <p className="text-slate-500 text-sm text-center py-8">
-                Loading users…
+                Loading members...
               </p>
             )}
 
@@ -236,12 +240,11 @@ function AdminDash() {
                       key={u.id}
                       className="hover:bg-slate-800/50 transition-colors"
                     >
-                      <td className="px-6 py-3 text-slate-500 font-mono text-xs">
+                      <td className="px-6 py-3 text-slate-600 font-mono text-xs">
                         {u.id}
                       </td>
                       <td className="px-6 py-3 text-slate-300 font-medium">
                         {u.username}
-                        {/* Mark the currently logged-in admin */}
                         {u.username === user?.username && (
                           <span className="ml-2 text-xs text-violet-400">
                             (you)
@@ -284,20 +287,18 @@ function AdminDash() {
           </div>
         </section>
 
-        {/* ── Activity Logs ── */}
+        {/* Activity logs */}
         <section className="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden">
-          {/* Section header */}
           <div className="px-6 py-4 border-b border-slate-700 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Activity Logs
               {totalLogs > 0 && (
-                <span className="ml-2 text-slate-500 font-normal normal-case">
+                <span className="ml-2 text-slate-600 font-normal normal-case">
                   ({totalLogs} total)
                 </span>
               )}
             </h2>
 
-            {/* Action filter */}
             <select
               value={actionFilter}
               onChange={(e) => handleFilterChange(e.target.value)}
@@ -312,11 +313,10 @@ function AdminDash() {
             </select>
           </div>
 
-          {/* Log table */}
           <div className="overflow-x-auto">
             {logsLoading && (
               <p className="text-slate-500 text-sm text-center py-8">
-                Loading logs…
+                Loading logs...
               </p>
             )}
 
@@ -339,7 +339,7 @@ function AdminDash() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-slate-500 uppercase tracking-wider border-b border-slate-700">
-                    <th className="px-6 py-3 font-medium">User</th>
+                    <th className="px-6 py-3 font-medium">Member</th>
                     <th className="px-6 py-3 font-medium">Action</th>
                     <th className="px-6 py-3 font-medium">IP Address</th>
                     <th className="px-6 py-3 font-medium">Timestamp</th>
@@ -354,7 +354,6 @@ function AdminDash() {
             )}
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="px-6 py-4 border-t border-slate-700 flex items-center justify-between">
               <span className="text-xs text-slate-500">
@@ -364,12 +363,12 @@ function AdminDash() {
                 <PaginationButton
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  label="← Previous"
+                  label="Previous"
                 />
                 <PaginationButton
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  label="Next →"
+                  label="Next"
                 />
               </div>
             </div>

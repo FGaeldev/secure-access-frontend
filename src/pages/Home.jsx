@@ -41,24 +41,23 @@ function Home() {
 
   return (
     <main className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-6 text-center">
-      {/* System badge */}
+      {/* Brand tag */}
       <span className="mb-6 inline-block bg-indigo-900/40 border border-indigo-700 text-indigo-300 text-xs px-4 py-1.5 rounded-full uppercase tracking-widest">
-        Integrated Access System
+        Schaden's Cosplays — Member Portal
       </span>
 
       {/* Headline */}
-      <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight max-w-xl">
-        Secure Access, <span className="text-indigo-400">Role-Aware</span>{" "}
-        Control
+      <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight max-w-2xl">
+        Your Stage. <span className="text-indigo-400">Your Identity.</span>
       </h1>
 
       {/* Subheading */}
       <p className="mt-4 text-slate-400 text-base max-w-md leading-relaxed">
-        A controlled authentication environment with multi-factor verification,
-        activity logging, and role-based dashboards.
+        Access your cosplay profile, manage your account, and stay connected
+        with the Schaden's Cosplays community — securely.
       </p>
 
-      {/* CTA */}
+      {/* CTA buttons */}
       <div className="mt-10 flex items-center gap-3">
         <Link
           to={ctaHref}
@@ -67,7 +66,6 @@ function Home() {
           {ctaLabel}
         </Link>
 
-        {/* Only shown to unauthenticated visitors — no signup needed once logged in */}
         {!user && (
           <Link
             to="/signup"
@@ -81,11 +79,11 @@ function Home() {
       {/* Feature pills */}
       <div className="mt-12 flex flex-wrap justify-center gap-3">
         {[
-          "bcrypt Authentication",
-          "3-Attempt Lockout",
-          "MFA Security Questions",
-          "Activity Logging",
-          "RBAC Dashboards",
+          "Secure Login",
+          "Two-Factor Verification",
+          "Member Profiles",
+          "Activity History",
+          "Role-Based Access",
         ].map((feature) => (
           <span
             key={feature}
@@ -95,6 +93,11 @@ function Home() {
           </span>
         ))}
       </div>
+
+      {/* Footer credit */}
+      <p className="mt-16 text-slate-700 text-xs tracking-wide">
+        Schaden's Cosplays &mdash; All rights reserved
+      </p>
     </main>
   );
 }

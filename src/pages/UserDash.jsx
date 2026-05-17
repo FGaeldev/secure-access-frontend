@@ -17,10 +17,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import ChangeCredentials from '../components/ChangeCredentials';
+import ChangeCredentials from "../components/ChangeCredentials";
 
 // Backend base URL — keep in sync with vite.config.js proxy or .env
-const API_BASE = "http://localhost/IAS/secure-access-frontend/backend/index.php";
+const API_BASE =
+  "http://localhost/IAS/secure-access-frontend/backend/index.php";
 
 // ---------------------------------------------------------------------------
 // Component
@@ -59,7 +60,7 @@ function UserDash() {
       } catch (err) {
         if (!cancelled) {
           setProfileError(
-            err.response?.data?.error ?? "Failed to load profile."
+            err.response?.data?.error ?? "Failed to load profile.",
           );
         }
       } finally {
@@ -80,14 +81,17 @@ function UserDash() {
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-10">
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header row */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">My Dashboard</h1>
+            <p className="text-xs text-slate-500 uppercase tracking-widest mb-0.5">
+              Schaden's Cosplays
+            </p>
+            <h1 className="text-2xl font-bold text-white">My Profile</h1>
             <p className="text-slate-400 text-sm mt-0.5">
               Welcome back,{" "}
               <span className="text-indigo-400 font-medium">
-                {user?.username ?? "…"}
+                {user?.username ?? "..."}
               </span>
             </p>
           </div>
@@ -99,12 +103,12 @@ function UserDash() {
 
         {/* Profile card */}
         <section className="bg-slate-900 border border-slate-700 rounded-2xl p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-            Profile
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            Account Details
           </h2>
 
           {profileLoading && (
-            <p className="text-slate-500 text-sm">Loading profile…</p>
+            <p className="text-slate-500 text-sm">Loading profile...</p>
           )}
 
           {profileError && (
@@ -123,7 +127,9 @@ function UserDash() {
               <ProfileField
                 label="Account Status"
                 value={profile.is_locked ? "Locked" : "Active"}
-                valueClass={profile.is_locked ? "text-red-400" : "text-emerald-400"}
+                valueClass={
+                  profile.is_locked ? "text-red-400" : "text-emerald-400"
+                }
               />
               <ProfileField
                 label="Member Since"
@@ -133,16 +139,17 @@ function UserDash() {
           )}
         </section>
 
+        {/* Security settings */}
         <ChangeCredentials />
 
-        {/* Info card — placeholder for future user actions */}
+        {/* Activity notice */}
         <section className="bg-slate-900 border border-slate-700 rounded-2xl p-6">
-          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
             Activity
           </h2>
           <p className="text-slate-500 text-sm">
-            Your recent activity log is available to administrators.
-            Contact your admin if you need access to your history.
+            Your login history and activity logs are visible to administrators.
+            Reach out to your admin if you need a copy of your records.
           </p>
         </section>
       </div>
@@ -224,7 +231,9 @@ function RoleBadge({ role }) {
 function ProfileField({ label, value, valueClass = "text-white" }) {
   return (
     <div className="space-y-1">
-      <dt className="text-xs text-slate-500 uppercase tracking-wide">{label}</dt>
+      <dt className="text-xs text-slate-500 uppercase tracking-wide">
+        {label}
+      </dt>
       <dd className={`text-sm font-medium ${valueClass}`}>{value ?? "—"}</dd>
     </div>
   );

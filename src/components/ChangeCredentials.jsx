@@ -41,13 +41,12 @@ function ChangeCredentials() {
   return (
     <section className="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden">
       <div className="px-6 py-4 border-b border-slate-700">
-        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
           Security Settings
         </h2>
       </div>
 
       <div className="divide-y divide-slate-800">
-        {/* ── Password change ── */}
         <CollapsibleForm
           label="Change Password"
           isOpen={activeForm === "password"}
@@ -56,7 +55,6 @@ function ChangeCredentials() {
           <PasswordForm onSuccess={() => setActiveForm(null)} />
         </CollapsibleForm>
 
-        {/* ── MFA answer change ── */}
         <CollapsibleForm
           label="Change Security Answer"
           isOpen={activeForm === "mfa"}
@@ -94,12 +92,21 @@ function CollapsibleForm({ label, isOpen, onToggle, children }) {
         aria-expanded={isOpen}
       >
         <span className="font-medium">{label}</span>
-        {/* Chevron rotates when open */}
-        <span
-          className={`text-slate-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={`w-4 h-4 text-slate-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+          aria-hidden="true"
         >
-          ▾
-        </span>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
       </button>
 
       {isOpen && <div className="px-6 pb-6">{children}</div>}
