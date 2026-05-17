@@ -13,7 +13,7 @@
  *   {
  *     username:        string,   // 3–30 chars, alphanumeric/underscore/hyphen only
  *     email:           string,   // valid email, max 255 chars
- *     password:        string,   // min 8 chars, max 255 chars
+ *     password:        string,   // min 8 chars, complexity rules enforced
  *     mfa_question:    int,      // index into the security questions pool (0–4)
  *     mfa_answer:      string    // 1–128 chars, stored normalized + hashed
  *   }
@@ -26,14 +26,14 @@
  *
  * Security:
  *   - All inputs validated server-side — never trust the client.
+ *   - Password complexity enforced: uppercase, lowercase, digit, special char.
  *   - Username uniqueness enforced at DB level (UNIQUE constraint) and
  *     also checked explicitly to return a friendly error.
  *   - Email uniqueness enforced the same way.
  *   - Password hashed with PASSWORD_BCRYPT cost 12 — matches login.php.
  *   - MFA answer normalized (trim + strtolower) then hashed — matches
  *     verify_mfa.php so login works immediately after registration.
- *   - Authenticated users are blocked from registering again (redirect
- *     them on the frontend; this guard is a backend safety net).
+ *   - Authenticated users are blocked from registering again.
  *   - Role is hardcoded to 'user' — never read from request body.
  */
 
@@ -51,8 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 // =============================================================
 // 2. BLOCK ALREADY-AUTHENTICATED USERS
-// If a logged-in user somehow hits this route, reject it.
-// The frontend should redirect them away from /signup entirely.
 // =============================================================
 if (!empty($_SESSION['authenticated']) && $_SESSION['authenticated'] === true) {
     http_response_code(403);
@@ -96,7 +94,6 @@ if (strlen($username) < 3 || strlen($username) > 30) {
     exit;
 }
 
-// Only alphanumeric, underscore, hyphen — prevents injection even with prepared stmts
 if (!preg_match('/^[a-zA-Z0-9_-]+$/', $username)) {
     http_response_code(422);
     echo json_encode(['success' => false, 'message' => 'Username may only contain letters, numbers, underscores, or hyphens.']);
@@ -110,29 +107,50 @@ if ($email === '') {
     exit;
 }
 
-// filter_var is the standard PHP email format check
 if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 255) {
     http_response_code(422);
     echo json_encode(['success' => false, 'message' => 'Enter a valid email address.']);
     exit;
 }
 
-// ── Password ──────────────────────────────────────────────────
+// ── Password — complexity rules mirror validators.js ──────────
 if (strlen($password) < 8) {
     http_response_code(422);
     echo json_encode(['success' => false, 'message' => 'Password must be at least 8 characters.']);
     exit;
 }
 
-// bcrypt silently truncates beyond 72 bytes — cap before that
 if (strlen($password) > 255) {
     http_response_code(422);
     echo json_encode(['success' => false, 'message' => 'Password is too long.']);
     exit;
 }
 
+if (!preg_match('/[A-Z]/', $password)) {
+    http_response_code(422);
+    echo json_encode(['success' => false, 'message' => 'Password must contain at least one uppercase letter.']);
+    exit;
+}
+
+if (!preg_match('/[a-z]/', $password)) {
+    http_response_code(422);
+    echo json_encode(['success' => false, 'message' => 'Password must contain at least one lowercase letter.']);
+    exit;
+}
+
+if (!preg_match('/[0-9]/', $password)) {
+    http_response_code(422);
+    echo json_encode(['success' => false, 'message' => 'Password must contain at least one number.']);
+    exit;
+}
+
+if (!preg_match('/[^A-Za-z0-9]/', $password)) {
+    http_response_code(422);
+    echo json_encode(['success' => false, 'message' => 'Password must contain at least one special character.']);
+    exit;
+}
+
 // ── MFA question index ────────────────────────────────────────
-// Cast to int so non-numeric values become 0; then check whitelist
 $questionIdx = (int) $questionIdx;
 
 if (!array_key_exists($questionIdx, $securityQuestions)) {
@@ -156,9 +174,6 @@ if (strlen($mfaAnswer) > 128) {
 
 // =============================================================
 // 5. UNIQUENESS CHECKS
-// Check before INSERT to return a readable error.
-// The UNIQUE constraint in the DB is the real enforcement layer —
-// these checks just improve the UX error message.
 // =============================================================
 $pdo = getDB();
 
@@ -180,19 +195,14 @@ if ($checkEmail->fetch()) {
 
 // =============================================================
 // 6. HASH CREDENTIALS
-// cost 12 matches login.php. Do NOT change cost here without
-// updating login.php as well — they must agree.
-// MFA answer normalized identically to verify_mfa.php:
-//   trim() already applied above; strtolower() applied here.
 // =============================================================
 $passwordHash  = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
-$normalizedMfa = strtolower($mfaAnswer); // trim() already done above
+$normalizedMfa = strtolower($mfaAnswer);
 $mfaHash       = password_hash($normalizedMfa, PASSWORD_BCRYPT, ['cost' => 12]);
 
 // =============================================================
 // 7. INSERT NEW USER
 // role is hardcoded — never sourced from $body.
-// failed_attempts, locked_until, last_login default to 0/NULL/NULL.
 // =============================================================
 try {
     $insert = $pdo->prepare(
@@ -203,19 +213,17 @@ try {
         ':username'        => $username,
         ':email'           => $email,
         ':password_hash'   => $passwordHash,
-        ':role'            => 'user',           // Hardcoded — never from body
+        ':role'            => 'user',
         ':mfa_question'    => $questionIdx,
         ':mfa_answer_hash' => $mfaHash,
     ]);
 } catch (\PDOException $e) {
-    // Catch race-condition duplicates (two requests at the same ms)
     if ($e->getCode() === '23000') {
         http_response_code(409);
         echo json_encode(['success' => false, 'message' => 'Username or email already taken.']);
         exit;
     }
 
-    // Unexpected DB error — log server-side, return generic message
     error_log('[REGISTER ERROR] ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Registration failed. Please try again.']);
@@ -224,7 +232,6 @@ try {
 
 $newUserId = (int) $pdo->lastInsertId();
 
-// Audit log — use the new user's own ID as actor
 logActivity($pdo, $newUserId, $username, 'ACCOUNT_CREATED', "Role: user");
 
 echo json_encode([

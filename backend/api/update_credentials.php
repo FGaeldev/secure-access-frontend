@@ -26,9 +26,9 @@
  *   - Authenticated session required (any role).
  *   - User ID always sourced from session — users cannot target other accounts.
  *   - Current credential verified via password_verify() before any update.
+ *   - New password complexity enforced: uppercase, lowercase, digit, special char.
  *   - New password hashed with PASSWORD_BCRYPT before storage.
- *   - New MFA answer lowercased + trimmed then hashed — matches verify_mfa.php logic.
- *   - Minimum length enforced: password ≥ 8 chars, answer ≥ 1 char.
+ *   - New MFA answer lowercased + trimmed then hashed — matches verify_mfa.php.
  */
 
 require_once __DIR__ . '/../config/db.php';
@@ -71,7 +71,7 @@ if ($type === 'password') {
     $currentPassword = $body['current_password'] ?? '';
     $newPassword     = $body['new_password']     ?? '';
 
-    // Basic length guards (mirrors validators.js rules)
+    // ── Complexity validation — mirrors validators.js rules ──
     if (strlen($newPassword) < 8) {
         http_response_code(422);
         echo json_encode(['success' => false, 'message' => 'New password must be at least 8 characters.']);
@@ -81,6 +81,30 @@ if ($type === 'password') {
     if (strlen($newPassword) > 255) {
         http_response_code(422);
         echo json_encode(['success' => false, 'message' => 'New password is too long.']);
+        exit;
+    }
+
+    if (!preg_match('/[A-Z]/', $newPassword)) {
+        http_response_code(422);
+        echo json_encode(['success' => false, 'message' => 'New password must contain at least one uppercase letter.']);
+        exit;
+    }
+
+    if (!preg_match('/[a-z]/', $newPassword)) {
+        http_response_code(422);
+        echo json_encode(['success' => false, 'message' => 'New password must contain at least one lowercase letter.']);
+        exit;
+    }
+
+    if (!preg_match('/[0-9]/', $newPassword)) {
+        http_response_code(422);
+        echo json_encode(['success' => false, 'message' => 'New password must contain at least one number.']);
+        exit;
+    }
+
+    if (!preg_match('/[^A-Za-z0-9]/', $newPassword)) {
+        http_response_code(422);
+        echo json_encode(['success' => false, 'message' => 'New password must contain at least one special character.']);
         exit;
     }
 
@@ -102,7 +126,7 @@ if ($type === 'password') {
         exit;
     }
 
-    // Hash and store — PASSWORD_BCRYPT cost 12 matches what login.php uses
+    // Hash and store
     $newHash = password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 12]);
 
     $update = $pdo->prepare('UPDATE users SET password_hash = :hash WHERE id = :id');
@@ -130,12 +154,12 @@ if ($type === 'password') {
         exit;
     }
 
-    // Fetch current MFA hash — column name must match your schema
+    // Fetch current MFA hash
     $stmt = $pdo->prepare('SELECT mfa_answer_hash FROM users WHERE id = :id LIMIT 1');
     $stmt->execute([':id' => $userId]);
     $row = $stmt->fetch();
 
-    // Normalize current answer same way verify_mfa.php does: lowercase + trim
+    // Normalize same way verify_mfa.php does: trim + strtolower
     $normalizedCurrent = strtolower(trim($currentAnswer));
 
     if (!$row || !password_verify($normalizedCurrent, $row['mfa_answer_hash'])) {
@@ -144,7 +168,6 @@ if ($type === 'password') {
         exit;
     }
 
-    // Normalize and hash the new answer — same normalization as above
     $normalizedNew = strtolower(trim($newAnswer));
     $newHash       = password_hash($normalizedNew, PASSWORD_BCRYPT, ['cost' => 12]);
 

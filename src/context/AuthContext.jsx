@@ -40,8 +40,8 @@ import { useNavigate } from 'react-router-dom';
  * Base URL for all PHP API calls.
  * Update this if your XAMPP vhost or folder structure differs.
  */
-const BACKEND_URL =
-  'http://localhost/IAS/secure-access-frontend/backend/index.php';
+import API_BASE from '../config.js';
+const BACKEND_URL = API_BASE;
 
 const MAX_ATTEMPTS = 3; // Must match PHP login.php
 

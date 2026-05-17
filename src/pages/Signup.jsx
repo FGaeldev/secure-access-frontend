@@ -5,7 +5,7 @@
  *              redirects to /login with a success notice.
  *
  * @context     Public route — already-authenticated users are redirected
- *              to their dashboard immediately on render (same guard Login uses).
+ *              to their dashboard immediately on render.
  *              Rendered by App.jsx at "/signup".
  *
  * @backend     POST ?route=register
@@ -16,13 +16,17 @@
  *  - react
  *  - react-router-dom (useNavigate, Link)
  *  - AuthContext (useAuth) — for isAuthenticated redirect guard only
- *  - validators.js — validateUsername, validatePassword
+ *  - validators.js — validateUsername, validatePassword, getPasswordStrength
  */
 
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { validateUsername, validatePassword } from "../utils/validators";
+import {
+  validateUsername,
+  validatePassword,
+  getPasswordStrength,
+} from "../utils/validators";
 import API_BASE from "../config.js";
 
 // ---------------------------------------------------------------------------
@@ -53,7 +57,7 @@ function Signup() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  // Redirect already-authenticated users away — same pattern as Login.jsx
+  // Redirect already-authenticated users away
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/dashboard", { replace: true });
@@ -66,7 +70,7 @@ function Signup() {
     email: "",
     password: "",
     confirm: "",
-    mfaQuestion: 0, // Index into SECURITY_QUESTIONS
+    mfaQuestion: 0,
     mfaAnswer: "",
   });
 
@@ -88,25 +92,21 @@ function Signup() {
   function handleChange(e) {
     const { name, value } = e.target;
     setFields((prev) => ({ ...prev, [name]: value }));
-    // Clear field-level error on change so user gets immediate feedback
     setFieldErrors((prev) => ({ ...prev, [name]: null }));
     setSubmitError(null);
   }
 
   /**
    * Runs all client-side validation before the POST is sent.
-   * Populates fieldErrors and returns false if anything fails.
    *
    * @returns {boolean} True if all fields pass.
    */
   function validateAll() {
     const errors = {};
 
-    // Username — reuse existing validator
     const usernameResult = validateUsername(fields.username);
     if (!usernameResult.valid) errors.username = usernameResult.error;
 
-    // Email — basic format check
     const emailTrimmed = fields.email.trim();
     if (!emailTrimmed) {
       errors.email = "Email is required.";
@@ -114,16 +114,13 @@ function Signup() {
       errors.email = "Enter a valid email address.";
     }
 
-    // Password — reuse existing validator
     const passwordResult = validatePassword(fields.password);
     if (!passwordResult.valid) errors.password = passwordResult.error;
 
-    // Confirm password
     if (fields.confirm !== fields.password) {
       errors.confirm = "Passwords do not match.";
     }
 
-    // MFA answer
     if (!fields.mfaAnswer.trim()) {
       errors.mfaAnswer = "Security answer is required.";
     } else if (fields.mfaAnswer.trim().length > 128) {
@@ -137,8 +134,6 @@ function Signup() {
   /**
    * Submits the registration form.
    * Validates first, then POSTs to the backend.
-   * On success → navigate to /login with a flash message in router state.
-   * On failure → display server error inline.
    */
   async function handleSubmit() {
     if (!validateAll()) return;
@@ -154,7 +149,7 @@ function Signup() {
         body: JSON.stringify({
           username: fields.username.trim(),
           email: fields.email.trim(),
-          password: fields.password, // Not trimmed — intentional
+          password: fields.password,
           mfa_question: Number(fields.mfaQuestion),
           mfa_answer: fields.mfaAnswer.trim(),
         }),
@@ -163,7 +158,6 @@ function Signup() {
       const data = await res.json();
 
       if (data.success) {
-        // Pass a flash message to Login so it can show a success banner
         navigate("/login", {
           replace: true,
           state: { flash: "Account created! You can now log in." },
@@ -171,7 +165,6 @@ function Signup() {
         return;
       }
 
-      // Server-side error (duplicate username, etc.)
       setSubmitError(data.message ?? "Registration failed. Please try again.");
     } catch {
       setSubmitError("Network error. Check your connection and try again.");
@@ -187,8 +180,12 @@ function Signup() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md space-y-6">
-        {/* ── Heading ── */}
+
+        {/* Heading */}
         <div className="text-center">
+          <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">
+            Schaden's Cosplays
+          </p>
           <h1 className="text-2xl font-bold text-white">Create an account</h1>
           <p className="text-slate-400 text-sm mt-1">
             Already have one?{" "}
@@ -201,8 +198,9 @@ function Signup() {
           </p>
         </div>
 
-        {/* ── Form card ── */}
+        {/* Form card */}
         <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 space-y-5">
+
           {/* Global submit error */}
           {submitError && (
             <div
@@ -213,7 +211,7 @@ function Signup() {
             </div>
           )}
 
-          {/* ── Username ── */}
+          {/* Username */}
           <Field label="Username" error={fieldErrors.username}>
             <TextInput
               name="username"
@@ -224,7 +222,7 @@ function Signup() {
             />
           </Field>
 
-          {/* ── Email ── */}
+          {/* Email */}
           <Field label="Email" error={fieldErrors.email}>
             <TextInput
               name="email"
@@ -236,21 +234,18 @@ function Signup() {
             />
           </Field>
 
-          {/* ── Password ── */}
-          <Field
-            label="Password"
-            error={fieldErrors.password}
-            hint="At least 8 characters"
-          >
+          {/* Password + strength meter */}
+          <Field label="Password" error={fieldErrors.password}>
             <PasswordInput
               name="password"
               value={fields.password}
               onChange={handleChange}
               autoComplete="new-password"
             />
+            <PasswordStrengthMeter password={fields.password} />
           </Field>
 
-          {/* ── Confirm password ── */}
+          {/* Confirm password */}
           <Field label="Confirm Password" error={fieldErrors.confirm}>
             <PasswordInput
               name="confirm"
@@ -262,7 +257,7 @@ function Signup() {
 
           <hr className="border-slate-700" />
 
-          {/* ── Security question ── */}
+          {/* Security question */}
           <Field label="Security Question" hint="Used as a second login factor">
             <select
               name="mfaQuestion"
@@ -278,7 +273,7 @@ function Signup() {
             </select>
           </Field>
 
-          {/* ── MFA answer ── */}
+          {/* MFA answer */}
           <Field
             label="Your Answer"
             error={fieldErrors.mfaAnswer}
@@ -293,7 +288,7 @@ function Signup() {
             />
           </Field>
 
-          {/* ── Submit ── */}
+          {/* Submit */}
           <button
             onClick={handleSubmit}
             disabled={loading}
@@ -308,21 +303,107 @@ function Signup() {
 }
 
 // ---------------------------------------------------------------------------
+// PasswordStrengthMeter
+// ---------------------------------------------------------------------------
+
+/**
+ * PasswordStrengthMeter
+ *
+ * Displays a 5-segment bar, a strength label, and a requirements checklist.
+ * Updates on every keystroke — purely presentational, no state of its own.
+ * Returns null when password is empty so it doesn't render before the user
+ * has typed anything.
+ *
+ * @param {Object} props
+ * @param {string} props.password - Current raw password value from the form.
+ * @returns {React.ReactElement|null}
+ */
+function PasswordStrengthMeter({ password }) {
+  const { score, label, color } = getPasswordStrength(password);
+
+  if (!password) return null;
+
+  const requirements = [
+    { met: password.length >= 8,           text: "At least 8 characters" },
+    { met: /[A-Z]/.test(password),          text: "One uppercase letter" },
+    { met: /[a-z]/.test(password),          text: "One lowercase letter" },
+    { met: /[0-9]/.test(password),          text: "One number" },
+    { met: /[^A-Za-z0-9]/.test(password),   text: "One special character" },
+  ];
+
+  return (
+    <div className="space-y-2 mt-2">
+
+      {/* Segmented bar — 5 segments, filled up to score */}
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((seg) => (
+          <div
+            key={seg}
+            style={{
+              height: 4,
+              flex: 1,
+              borderRadius: 999,
+              background: score >= seg ? color : "rgba(255,255,255,0.08)",
+              transition: "background 0.25s ease",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Strength label */}
+      {label && (
+        <p style={{ color, fontSize: 11, fontWeight: 500, letterSpacing: "0.03em" }}>
+          {label}
+        </p>
+      )}
+
+      {/* Requirements checklist */}
+      <ul className="space-y-1 pt-1">
+        {requirements.map((req) => (
+          <li
+            key={req.text}
+            className="flex items-center gap-2 text-xs"
+            style={{ color: req.met ? "#86efac" : "#64748b" }}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              aria-hidden="true"
+            >
+              {req.met ? (
+                <path
+                  d="M2 6l3 3 5-5"
+                  stroke="#86efac"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ) : (
+                <circle cx="6" cy="6" r="4" stroke="#64748b" strokeWidth="1.5" />
+              )}
+            </svg>
+            {req.text}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Micro-components
 // ---------------------------------------------------------------------------
 
 /**
- * Field
- *
- * Wraps a label, input, optional hint, and optional error message
- * around any input element passed as children.
+ * Field — label + input + optional hint + optional error.
  *
  * @param {Object}          props
- * @param {string}          props.label    - Field label text.
- * @param {React.ReactNode} props.children - The input element.
- * @param {string|null}     [props.error]  - Validation error to display.
- * @param {string|null}     [props.hint]   - Helper text shown below the label.
- * @returns {React.ReactElement}
+ * @param {string}          props.label
+ * @param {React.ReactNode} props.children
+ * @param {string|null}     [props.error]
+ * @param {string|null}     [props.hint]
  */
 function Field({ label, children, error, hint }) {
   return (
@@ -346,7 +427,7 @@ function Field({ label, children, error, hint }) {
 }
 
 /**
- * TextInput — standard text/email input with consistent dark styling.
+ * TextInput — standard text/email input.
  *
  * @param {Object}   props
  * @param {string}   props.name
@@ -354,17 +435,9 @@ function Field({ label, children, error, hint }) {
  * @param {Function} props.onChange
  * @param {string}   [props.placeholder]
  * @param {string}   [props.autoComplete]
- * @param {string}   [props.type]           - Defaults to "text".
- * @returns {React.ReactElement}
+ * @param {string}   [props.type]
  */
-function TextInput({
-  name,
-  value,
-  onChange,
-  placeholder,
-  autoComplete,
-  type = "text",
-}) {
+function TextInput({ name, value, onChange, placeholder, autoComplete, type = "text" }) {
   return (
     <input
       type={type}
@@ -379,14 +452,13 @@ function TextInput({
 }
 
 /**
- * PasswordInput — password field using shared styling.
+ * PasswordInput — password field.
  *
  * @param {Object}   props
  * @param {string}   props.name
  * @param {string}   props.value
  * @param {Function} props.onChange
  * @param {string}   [props.autoComplete]
- * @returns {React.ReactElement}
  */
 function PasswordInput({ name, value, onChange, autoComplete }) {
   return (

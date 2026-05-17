@@ -9,11 +9,12 @@
  * @backend POST ?route=update_credentials
  *          Body: { type: "password"|"mfa", ...fields }
  *
- * @dependencies react, axios, AuthContext
+ * @dependencies react, axios, validators.js
  */
 
 import React, { useState } from "react";
 import axios from "axios";
+import { getPasswordStrength } from "../utils/validators";
 import API_BASE from "../config.js";
 
 // ---------------------------------------------------------------------------
@@ -29,7 +30,6 @@ import API_BASE from "../config.js";
  * @returns {React.ReactElement}
  */
 function ChangeCredentials() {
-  // Which sub-form is open: null | "password" | "mfa"
   const [activeForm, setActiveForm] = useState(null);
 
   function toggleForm(form) {
@@ -66,20 +66,19 @@ function ChangeCredentials() {
 }
 
 // ---------------------------------------------------------------------------
-// CollapsibleForm — accordion wrapper
+// CollapsibleForm
 // ---------------------------------------------------------------------------
 
 /**
  * CollapsibleForm
  *
- * Toggle header + animated body. Keeps layout clean when both forms present.
+ * Toggle header + body. Keeps layout clean when both forms are present.
  *
  * @param {Object}           props
- * @param {string}           props.label    - Button label shown in header.
- * @param {boolean}          props.isOpen   - Controls expanded state.
- * @param {Function}         props.onToggle - Called when header is clicked.
- * @param {React.ReactNode}  props.children - Form content when expanded.
- * @returns {React.ReactElement}
+ * @param {string}           props.label
+ * @param {boolean}          props.isOpen
+ * @param {Function}         props.onToggle
+ * @param {React.ReactNode}  props.children
  */
 function CollapsibleForm({ label, isOpen, onToggle, children }) {
   return (
@@ -99,11 +98,7 @@ function CollapsibleForm({ label, isOpen, onToggle, children }) {
           strokeWidth={2}
           aria-hidden="true"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M19 9l-7 7-7-7"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
@@ -120,12 +115,12 @@ function CollapsibleForm({ label, isOpen, onToggle, children }) {
  * PasswordForm
  *
  * Three fields: current password, new password, confirm new password.
- * Client validates confirm match before sending.
+ * Renders a PasswordStrengthMeter below the new password field.
+ * Client validates confirm match and complexity before sending.
  * Server verifies current password before updating.
  *
  * @param {Object}   props
- * @param {Function} props.onSuccess - Called after successful update (collapses form).
- * @returns {React.ReactElement}
+ * @param {Function} props.onSuccess - Called after successful update.
  */
 function PasswordForm({ onSuccess }) {
   const [fields, setFields] = useState({ current: "", next: "", confirm: "" });
@@ -136,7 +131,6 @@ function PasswordForm({ onSuccess }) {
   function handleChange(e) {
     const { name, value } = e.target;
     setFields((prev) => ({ ...prev, [name]: value }));
-    // Clear feedback on any edit
     setError(null);
     setSuccess(null);
   }
@@ -145,14 +139,28 @@ function PasswordForm({ onSuccess }) {
     setError(null);
     setSuccess(null);
 
-    // Client-side confirm match
     if (fields.next !== fields.confirm) {
       setError("New passwords do not match.");
       return;
     }
-
     if (fields.next.length < 8) {
       setError("New password must be at least 8 characters.");
+      return;
+    }
+    if (!/[A-Z]/.test(fields.next)) {
+      setError("New password must contain at least one uppercase letter.");
+      return;
+    }
+    if (!/[a-z]/.test(fields.next)) {
+      setError("New password must contain at least one lowercase letter.");
+      return;
+    }
+    if (!/[0-9]/.test(fields.next)) {
+      setError("New password must contain at least one number.");
+      return;
+    }
+    if (!/[^A-Za-z0-9]/.test(fields.next)) {
+      setError("New password must contain at least one special character.");
       return;
     }
 
@@ -161,17 +169,12 @@ function PasswordForm({ onSuccess }) {
     try {
       const response = await axios.post(
         `${API_BASE}?route=update_credentials`,
-        {
-          type: "password",
-          current_password: fields.current,
-          new_password: fields.next,
-        },
-        { withCredentials: true },
+        { type: "password", current_password: fields.current, new_password: fields.next },
+        { withCredentials: true }
       );
 
       setSuccess(response.data?.message ?? "Password updated.");
       setFields({ current: "", next: "", confirm: "" });
-      // Collapse form after a brief success display
       setTimeout(onSuccess, 1500);
     } catch (err) {
       setError(err.response?.data?.message ?? "Failed to update password.");
@@ -188,12 +191,18 @@ function PasswordForm({ onSuccess }) {
         value={fields.current}
         onChange={handleChange}
       />
-      <PasswordInput
-        label="New Password"
-        name="next"
-        value={fields.next}
-        onChange={handleChange}
-      />
+
+      {/* New password + strength meter */}
+      <div className="space-y-1">
+        <PasswordInput
+          label="New Password"
+          name="next"
+          value={fields.next}
+          onChange={handleChange}
+        />
+        <PasswordStrengthMeter password={fields.next} />
+      </div>
+
       <PasswordInput
         label="Confirm New Password"
         name="confirm"
@@ -225,8 +234,7 @@ function PasswordForm({ onSuccess }) {
  * Server verifies current (normalized) before hashing and storing new.
  *
  * @param {Object}   props
- * @param {Function} props.onSuccess - Called after successful update.
- * @returns {React.ReactElement}
+ * @param {Function} props.onSuccess
  */
 function MfaAnswerForm({ onSuccess }) {
   const [fields, setFields] = useState({ current: "", next: "" });
@@ -255,12 +263,8 @@ function MfaAnswerForm({ onSuccess }) {
     try {
       const response = await axios.post(
         `${API_BASE}?route=update_credentials`,
-        {
-          type: "mfa",
-          current_answer: fields.current,
-          new_answer: fields.next,
-        },
-        { withCredentials: true },
+        { type: "mfa", current_answer: fields.current, new_answer: fields.next },
+        { withCredentials: true }
       );
 
       setSuccess(response.data?.message ?? "Security answer updated.");
@@ -275,12 +279,9 @@ function MfaAnswerForm({ onSuccess }) {
 
   return (
     <div className="space-y-4 pt-2">
-      {/* Remind user of the question so they know what they're answering */}
       <p className="text-xs text-slate-500">
         Security question:{" "}
-        <span className="text-slate-400">
-          What is your mother's maiden name?
-        </span>
+        <span className="text-slate-400">What is your mother's maiden name?</span>
       </p>
 
       <TextInput
@@ -312,11 +313,98 @@ function MfaAnswerForm({ onSuccess }) {
 }
 
 // ---------------------------------------------------------------------------
+// PasswordStrengthMeter
+// ---------------------------------------------------------------------------
+
+/**
+ * PasswordStrengthMeter
+ *
+ * 5-segment bar + label + requirements checklist.
+ * Returns null when password is empty.
+ *
+ * @param {Object} props
+ * @param {string} props.password
+ */
+function PasswordStrengthMeter({ password }) {
+  const { score, label, color } = getPasswordStrength(password);
+
+  if (!password) return null;
+
+  const requirements = [
+    { met: password.length >= 8,           text: "At least 8 characters" },
+    { met: /[A-Z]/.test(password),          text: "One uppercase letter" },
+    { met: /[a-z]/.test(password),          text: "One lowercase letter" },
+    { met: /[0-9]/.test(password),          text: "One number" },
+    { met: /[^A-Za-z0-9]/.test(password),   text: "One special character" },
+  ];
+
+  return (
+    <div className="space-y-2 mt-1">
+
+      {/* Segmented bar */}
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((seg) => (
+          <div
+            key={seg}
+            style={{
+              height: 4,
+              flex: 1,
+              borderRadius: 999,
+              background: score >= seg ? color : "rgba(255,255,255,0.08)",
+              transition: "background 0.25s ease",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Strength label */}
+      {label && (
+        <p style={{ color, fontSize: 11, fontWeight: 500, letterSpacing: "0.03em" }}>
+          {label}
+        </p>
+      )}
+
+      {/* Requirements checklist */}
+      <ul className="space-y-1 pt-1">
+        {requirements.map((req) => (
+          <li
+            key={req.text}
+            className="flex items-center gap-2 text-xs"
+            style={{ color: req.met ? "#86efac" : "#64748b" }}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              aria-hidden="true"
+            >
+              {req.met ? (
+                <path
+                  d="M2 6l3 3 5-5"
+                  stroke="#86efac"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ) : (
+                <circle cx="6" cy="6" r="4" stroke="#64748b" strokeWidth="1.5" />
+              )}
+            </svg>
+            {req.text}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Shared micro-components
 // ---------------------------------------------------------------------------
 
 /**
- * PasswordInput — labeled password field with consistent styling.
+ * PasswordInput — labeled password field.
  *
  * @param {{ label: string, name: string, value: string, onChange: Function }} props
  */
@@ -339,7 +427,7 @@ function PasswordInput({ label, name, value, onChange }) {
 }
 
 /**
- * TextInput — labeled text field (for MFA answers).
+ * TextInput — labeled text field for MFA answers.
  *
  * @param {{ label: string, name: string, value: string, onChange: Function, placeholder?: string }} props
  */
@@ -363,7 +451,7 @@ function TextInput({ label, name, value, onChange, placeholder }) {
 }
 
 /**
- * FeedbackRow — shows error or success message below form fields.
+ * FeedbackRow — error or success message below form fields.
  *
  * @param {{ error: string|null, success: string|null }} props
  */
