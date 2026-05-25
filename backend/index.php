@@ -7,7 +7,7 @@
  *               to the appropriate API handler file.
  *
  * Usage:        All frontend fetch() calls target:
- *               https://schadens.augusta2026.online/backend/index.php?route=<name>
+ *               https://jimenez.augusta2026.online/backend/index.php?route=<name>
  *
  * Dependencies: PHP 7.4+, PDO_MySQL, sessions enabled in php.ini
  *
@@ -29,7 +29,7 @@ ini_set('session.use_strict_mode', '1');
 // so credentials (cookies) are accepted by the browser.
 // =============================================================
 $allowedOrigins = [
-    'https://schadens.augusta2026.online',
+    'https://jimenez.augusta2026.online',
     'http://localhost:5173',
 ];
 
@@ -38,7 +38,7 @@ $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
 if (in_array($requestOrigin, $allowedOrigins, true)) {
     header('Access-Control-Allow-Origin: ' . $requestOrigin);
 } else {
-    header('Access-Control-Allow-Origin: https://schadens.augusta2026.online');
+    header('Access-Control-Allow-Origin: https://jimenez.augusta2026.online');
 }
 
 header('Access-Control-Allow-Credentials: true');
